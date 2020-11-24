@@ -10,31 +10,34 @@ except ImportError:
     import Image
 import pytesseract
 
-# # Extract 6 colors from an image.
-# colors = colorgram.extract('test7.png', 10) 
+fileName = 'gatesfence.png'
 
-# # colorgram.extract returns Color objects, which let you access
-# # RGB, HSL, and what proportion of the image was that color.
 
-# # colorgram also sorts the colors from most prominent to least prominent
+# Extract 6 colors from an image.
+colors = colorgram.extract(fileName, 10) 
 
-# for x in colors:
-#     testColor = x
-#     rgb = testColor.rgb # e.g. (255, 151, 210)
-#     hsl = testColor.hsl # e.g. (230, 255, 203)
-#     proportion = testColor.proportion # e.g. 0.34
+# colorgram.extract returns Color objects, which let you access
+# RGB, HSL, and what proportion of the image was that color.
 
-#     print("\n")
-#     print(color("   ", back=(rgb[0], rgb[1], rgb[2])))
-#     print(rgb)
-#     print(hsl)
-#     print(proportion)
-# # RGB and HSL are named tuples, so values can be accessed as properties.
-# # These all work just as well:
-# red = rgb[0]
-# red = rgb.r
-# saturation = hsl[1]
-# saturation = hsl.s
+# colorgram also sorts the colors from most prominent to least prominent
+
+for x in colors:
+    testColor = x
+    rgb = testColor.rgb # e.g. (255, 151, 210)
+    hsl = testColor.hsl # e.g. (230, 255, 203)
+    proportion = testColor.proportion # e.g. 0.34
+
+    print("\n")
+    print(color("   ", back=(rgb[0], rgb[1], rgb[2])))
+    print(rgb)
+    print(hsl)
+    print(proportion)
+# RGB and HSL are named tuples, so values can be accessed as properties.
+# These all work just as well:
+red = rgb[0]
+red = rgb.r
+saturation = hsl[1]
+saturation = hsl.s
 
 # palettes can't be more than five colors
 # the idea is that the top five colors must account for at least 80% of the colors in the picture.
@@ -45,13 +48,12 @@ def FiveColors(colorList):
     for x in range(5):
         fiveColorProp += colorList[x].proportion
     return fiveColorProp * 100 
-    
 
 #finding the standard deviation of the light values in hsl
 def Contrast(colorList):
     lightList = []
     for x in colorList:
-        if x.proportion > .05:
+        if x.proportion > .01:
             lightList.append(x.hsl.l)
     dev = np.std(lightList)
     return min(dev, 100)
@@ -157,21 +159,31 @@ def textTests(parList):
     for x in tqdm.tqdm(range(len(parList))):
         colors = colorgram.extract(parList[x], 5)
         contrastList.append(Contrast(colors))
-    return np.average(contrastList)  
+    return min(99.0, np.average(contrastList)*2)
 
 
         
-print(ocr_core('ocrTest3.png'))
+print(ocr_core(fileName))
 
-image = Image.open('ocrTest3.png')
+image = Image.open(fileName)
 
 parList = groupText(ocr_core(image), image)
-print(textTests(parList))
 
-# print(f"Five color: {FiveColors(colors)}")
-# print(f"Contrast: {Contrast(colors)}")
-# print(f"60-30-10: {SixThreeOne(colors)}")
-# print(f"Red Green: {RedGreen(colors)}")
+read = textTests(parList)
+fiveColor = FiveColors(colors)
+contr = Contrast(colors)
+six = SixThreeOne(colors)
+redGreen = RedGreen(colors)
+finalScore = (read+fiveColor+contr+six+redGreen)/5
+print(f"Text Readability: {read}")
+print(f"Five color: {fiveColor}")
+print(f"Contrast: {contr}")
+print(f"60-30-10: {six}")
+print(f"Red Green: {redGreen}")
+
+print(f"Final Score: {finalScore}")
+
+
 
 
 
